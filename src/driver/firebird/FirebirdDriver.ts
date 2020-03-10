@@ -52,7 +52,7 @@ export class FirebirdDriver implements Driver {
         "bigint": { width: 20 }
     };
 
-    spatialTypes: ColumnType[];
+    spatialTypes: ColumnType[] = [];
 
     withLengthColumnTypes: ColumnType[] = [
         "char",
