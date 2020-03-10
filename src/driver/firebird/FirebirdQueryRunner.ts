@@ -184,7 +184,7 @@ export class FirebirdQueryRunner extends BaseQueryRunner implements QueryRunner 
                         ok(result);
                     });
                 } else {
-                    this.driver.firebirdDatabase.execute(query, parameters || [], (err, result) => {
+					const callback: any = (err: any, result: any[], meta: any[]) => {
                         const maxQueryExecutionTime = this.driver.connection.options.maxQueryExecutionTime;
                         const queryEndTime = +new Date();
                         const queryExecutionTime = queryEndTime - queryStartTime;
@@ -195,8 +195,21 @@ export class FirebirdQueryRunner extends BaseQueryRunner implements QueryRunner 
                             this.driver.connection.logger.logQueryError(err, query, parameters, this);
                             return fail(new QueryFailedError(query, parameters, err));
                         }
-                        ok(result);
-                    });
+						
+						const convertedResult = result.map((row: any) => meta.reduce((obj: any, col: any, colNumber: number) => {
+							let val = row[colNumber];
+							
+							// SQLVarText, SQLString
+							if (col.type == 452 || col.type == 448) {
+								val = val.toString('latin1');
+							}
+							obj[col.alias] = val;
+							return obj;
+						}, {}));
+                        ok(convertedResult);
+                    };
+					
+                    this.driver.firebirdDatabase.execute(query, parameters || [], callback);
                 }
             } catch (err) {
                 fail(err);
