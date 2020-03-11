@@ -200,7 +200,7 @@ export class FirebirdQueryRunner extends BaseQueryRunner implements QueryRunner 
 							let val = row[colNumber];
 							
 							// SQLVarText, SQLString
-							if (col.type == 452 || col.type == 448) {
+							if (Buffer.isBuffer(val) && (col.type == 452 || col.type == 448)) {
 								val = val.toString('latin1');
 							}
 							obj[col.alias] = val;
