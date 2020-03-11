@@ -19,6 +19,7 @@ import {LockNotSupportedOnGivenDriverError} from "../error/LockNotSupportedOnGiv
 import {MysqlDriver} from "../driver/mysql/MysqlDriver";
 import {PostgresDriver} from "../driver/postgres/PostgresDriver";
 import {OracleDriver} from "../driver/oracle/OracleDriver";
+import {FirebirdDriver} from "../driver/firebird/FirebirdDriver";
 import {SelectQuery} from "./SelectQuery";
 import {EntityMetadata} from "../metadata/EntityMetadata";
 import {ColumnMetadata} from "../metadata/ColumnMetadata";
@@ -1627,6 +1628,15 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                 return " FETCH NEXT " + limit + " ROWS ONLY";
             if (offset)
                 return " OFFSET " + offset + " ROWS";
+
+        } else if (this.connection.driver instanceof FirebirdDriver) {
+
+            if (limit && offset)
+                return " ROWS " + limit + " TO " + (offset + limit - 1);
+            if (limit)
+                return " ROWS " + limit;
+            if (offset)
+                return " ROWS 1 TO " + offset;
 
         } else {
             if (limit && offset)
