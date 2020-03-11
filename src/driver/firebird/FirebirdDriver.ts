@@ -195,12 +195,15 @@ export class FirebirdDriver implements Driver {
         }); // todo: make replace only in value statements, otherwise problems
         return [sql, escapedParameters];
     }
+	
     escape(columnName: string): string {
-        return `${columnName}`;
+        return columnName.toUpperCase();
     }
+	
     buildTableName(tableName: string, schema?: string | undefined, database?: string | undefined): string {
-        return `${tableName}`;
+        return tableName.toUpperCase();
     }
+	
     preparePersistentValue(value: any, columnMetadata: ColumnMetadata) {
         if (columnMetadata.transformer)
             value = ApplyValueTransformers.transformTo(columnMetadata.transformer, value);
