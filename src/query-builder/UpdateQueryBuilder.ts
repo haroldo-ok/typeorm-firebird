@@ -23,6 +23,7 @@ import {UpdateValuesMissingError} from "../error/UpdateValuesMissingError";
 import {EntityColumnNotFound} from "../error/EntityColumnNotFound";
 import {QueryDeepPartialEntity} from "./QueryPartialEntity";
 import {AuroraDataApiDriver} from "../driver/aurora-data-api/AuroraDataApiDriver";
+import {FirebirdDriver} from "../driver/firebird/FirebirdDriver";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -386,7 +387,8 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                                 this.connection.driver instanceof AuroraDataApiDriver ||
                                 this.connection.driver instanceof OracleDriver ||
                                 this.connection.driver instanceof AbstractSqliteDriver ||
-                                this.connection.driver instanceof SapDriver
+                                this.connection.driver instanceof SapDriver ||
+								this.connection.driver instanceof FirebirdDriver
             ? 0 : Object.keys(this.expressionMap.nativeParameters).length;
         if (metadata) {
             EntityMetadata.createPropertyPath(metadata, valuesSet).forEach(propertyPath => {
@@ -428,7 +430,8 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                             this.connection.driver instanceof AuroraDataApiDriver ||
                             this.connection.driver instanceof OracleDriver ||
                             this.connection.driver instanceof AbstractSqliteDriver ||
-                            this.connection.driver instanceof SapDriver) {
+                            this.connection.driver instanceof SapDriver ||
+							this.connection.driver instanceof FirebirdDriver) {
                             newParameters[paramName] = value;
                         } else {
                             this.expressionMap.nativeParameters[paramName] = value;
@@ -482,7 +485,8 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                         this.connection.driver instanceof AuroraDataApiDriver ||
                         this.connection.driver instanceof OracleDriver ||
                         this.connection.driver instanceof AbstractSqliteDriver ||
-                        this.connection.driver instanceof SapDriver) {
+                        this.connection.driver instanceof SapDriver ||
+						this.connection.driver instanceof FirebirdDriver) {
                         newParameters[key] = value;
                     } else {
                         this.expressionMap.nativeParameters[key] = value;
@@ -504,7 +508,8 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
             this.connection.driver instanceof AuroraDataApiDriver ||
             this.connection.driver instanceof OracleDriver ||
             this.connection.driver instanceof AbstractSqliteDriver ||
-            this.connection.driver instanceof SapDriver) {
+            this.connection.driver instanceof SapDriver ||
+			this.connection.driver instanceof FirebirdDriver) {
             this.expressionMap.nativeParameters = Object.assign(newParameters, this.expressionMap.nativeParameters);
         }
 
