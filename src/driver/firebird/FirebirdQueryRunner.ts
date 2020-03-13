@@ -227,7 +227,7 @@ export class FirebirdQueryRunner extends BaseQueryRunner implements QueryRunner 
 							});
 						}
 						
-						const convertedResult = result.map((row: any) => meta.reduce((obj: any, col: any, colNumber: number) => {
+						const convertedResult = result && result.map((row: any) => meta.reduce((obj: any, col: any, colNumber: number) => {
 							let val = row[colNumber];
 							
 							// SQLVarText, SQLString
