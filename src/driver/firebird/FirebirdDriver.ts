@@ -10,7 +10,6 @@ import { TableColumn } from "../../schema-builder/table/TableColumn";
 import { EntityMetadata } from "../../metadata/EntityMetadata";
 import { Connection } from "../../connection/Connection";
 import { FirebirdConnectionOptions } from "./FirebirdConnectionOptions";
-import { PlatformTools } from "../../platform/PlatformTools";
 import { Database, Options, ConnectionPool } from "node-firebird";
 import { RdbmsSchemaBuilder } from "../../schema-builder/RdbmsSchemaBuilder";
 import { FirebirdQueryRunner } from "./FirebirdQueryRunner";
@@ -124,7 +123,8 @@ export class FirebirdDriver implements Driver {
         this.firebirdOptions = connection.options as Options;
 
         // load mysql package
-        this.firebird = PlatformTools.load("node-firebird");
+		// TODO: Temporary workaround for https://github.com/typeorm/typeorm/issues/4210
+        this.firebird = require("node-firebird");
     }
 
     async connect(): Promise<void> {
