@@ -1632,7 +1632,7 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         } else if (this.connection.driver instanceof FirebirdDriver) {
 
             if (limit && offset)
-                return " ROWS " + limit + " TO " + (offset + limit - 1);
+                return " ROWS " + (offset + 1) + " TO " + (offset + limit);
             if (limit)
                 return " ROWS " + limit;
             if (offset)
