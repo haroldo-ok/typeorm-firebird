@@ -169,87 +169,75 @@ export class FirebirdQueryRunner extends BaseQueryRunner implements QueryRunner 
                 this.driver.connection.logger.logQuery(query, parameters, this);
                 const queryStartTime = +new Date();
 
-                if (this.isTransactionActive) {
-                    this.transaction.execute(query, parameters || [], (err, result) => {
-                        const maxQueryExecutionTime = this.driver.connection.options.maxQueryExecutionTime;
-                        const queryEndTime = +new Date();
-                        const queryExecutionTime = queryEndTime - queryStartTime;
-                        if (maxQueryExecutionTime && queryExecutionTime > maxQueryExecutionTime)
-                            this.driver.connection.logger.logQuerySlow(queryExecutionTime, query, parameters, this);
+				const callback: any = (err: any, result: any[], meta: any[]) => {
+					const maxQueryExecutionTime = this.driver.connection.options.maxQueryExecutionTime;
+					const queryEndTime = +new Date();
+					const queryExecutionTime = queryEndTime - queryStartTime;
+					if (maxQueryExecutionTime && queryExecutionTime > maxQueryExecutionTime)
+						this.driver.connection.logger.logQuerySlow(queryExecutionTime, query, parameters, this);
 
-                        if (err) {
-                            this.driver.connection.logger.logQueryError(err, query, parameters, this);
-                            return fail(new QueryFailedError(query, parameters, err));
-                        }
-                        ok(result);
-                    });
-                } else {
-					const callback: any = (err: any, result: any[], meta: any[]) => {
-                        const maxQueryExecutionTime = this.driver.connection.options.maxQueryExecutionTime;
-                        const queryEndTime = +new Date();
-                        const queryExecutionTime = queryEndTime - queryStartTime;
-                        if (maxQueryExecutionTime && queryExecutionTime > maxQueryExecutionTime)
-                            this.driver.connection.logger.logQuerySlow(queryExecutionTime, query, parameters, this);
-
-                        if (err) {
-                            this.driver.connection.logger.logQueryError(err, query, parameters, this);
-                            return fail(new QueryFailedError(query, parameters, err));
-                        }
-						
-						// TODO: It's not correctly converting accented chars
-						const streamToString = (stream: any, encoding: string): Promise<string> => {
-						  const chunks: any[] = []
-						  return new Promise((resolve, reject) => {
-							stream.on('data', (chunk: any) => chunks.push(chunk))
-							stream.on('error', reject)
-							stream.on('end', () => resolve(Buffer.concat(chunks).toString(encoding)))
-						  })
-						}
-						
-						const blobPromises: any[] = [];
-						const createBlobPromise = (obj: any, alias: any, val: any): Promise<any> => {
-							return new Promise((resolve, reject) => {
-								val((err: any, name: any, stream: any) => {
-									if (err) {
-										reject(err);
-										return;
-									}
-
-									// TODO: See what to do when the stream hasn't `setEncoding()`
-									if (!stream['setEncoding']) {
-										stream['setEncoding'] = () => undefined;
-									}
-
-									resolve(streamToString(stream, 'latin1').then(blobString => {
-									  obj[alias] = blobString;
-									}));								
-								});
-							});
-						}
-						
-						const convertedResult = result && result.map((row: any) => meta.reduce((obj: any, col: any, colNumber: number) => {
-							let val = row[colNumber];
-							
-							// SQLVarText, SQLString
-							if (Buffer.isBuffer(val) && (col.type == 452 || col.type == 448)) {
-								val = val.toString('latin1');
-							}
-							
-							// Is `val` as BLOB callback?
-							if (val instanceof Function) {
-								blobPromises.push(createBlobPromise(obj, col.alias, val));
-							}
-							
-							obj[col.alias] = val;							
-							return obj;
-						}, {}));
-						
-						// Wait for the blobs to load, then return the completed array.
-                        Promise.all(blobPromises).then(() => ok(convertedResult));
-                    };
+					if (err) {
+						this.driver.connection.logger.logQueryError(err, query, parameters, this);
+						return fail(new QueryFailedError(query, parameters, err));
+					}
 					
-                    this.driver.firebirdDatabase.execute(query, parameters || [], callback);
-                }
+					// TODO: It's not correctly converting accented chars
+					const streamToString = (stream: any, encoding: string): Promise<string> => {
+					  const chunks: any[] = []
+					  return new Promise((resolve, reject) => {
+						stream.on('data', (chunk: any) => chunks.push(chunk))
+						stream.on('error', reject)
+						stream.on('end', () => resolve(Buffer.concat(chunks).toString(encoding)))
+					  })
+					}
+					
+					const blobPromises: any[] = [];
+					const createBlobPromise = (obj: any, alias: any, val: any): Promise<any> => {
+						return new Promise((resolve, reject) => {
+							val((err: any, name: any, stream: any) => {
+								if (err) {
+									reject(err);
+									return;
+								}
+
+								// TODO: See what to do when the stream hasn't `setEncoding()`
+								if (!stream['setEncoding']) {
+									stream['setEncoding'] = () => undefined;
+								}
+
+								resolve(streamToString(stream, 'latin1').then(blobString => {
+								  obj[alias] = blobString;
+								}));								
+							});
+						});
+					}
+					
+					const convertedResult = result && result.map((row: any) => meta.reduce((obj: any, col: any, colNumber: number) => {
+						let val = row[colNumber];
+						
+						// SQLVarText, SQLString
+						if (Buffer.isBuffer(val) && (col.type == 452 || col.type == 448)) {
+							val = val.toString('latin1');
+						}
+						
+						// Is `val` as BLOB callback?
+						if (val instanceof Function) {
+							blobPromises.push(createBlobPromise(obj, col.alias, val));
+						}
+						
+						obj[col.alias] = val;							
+						return obj;
+					}, {}));
+					
+					// Wait for the blobs to load, then return the completed array.
+					Promise.all(blobPromises).then(() => ok(convertedResult));
+				};
+				
+				if (this.isTransactionActive) {
+					this.transaction.execute(query, parameters || [], callback);
+				} else {
+					this.driver.firebirdDatabase.execute(query, parameters || [], callback);
+				}
             } catch (err) {
                 fail(err);
             }
